@@ -1,22 +1,19 @@
-import express from "express";
-import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
-import cors from "cors";
+
+import authRoutes from './routes/auth.route.js';
+import messageRoutes from './routes/message.route.js';
+import { connectDB } from './lib/db.js';
+import { app, server } from './lib/socket.js';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import bodyParser from 'body-parser';
 import path from "path";
-import { connectDB } from "./lib/db.js";
-import authRoutes from "./routes/auth.route.js";
-import messageRoutes from "./routes/message.route.js";
-import { app, server } from "./lib/socket.js";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+const __dirname = path.resolve();
+import express from 'express';
 
-// Load environment variables
-dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);  // Fixed: was **dirname = dirname(**filename)
-
-app.use(express.json());
+// Middleware
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -25,19 +22,20 @@ app.use(
   })
 );
 
-app.use("/api/auth", authRoutes);
-app.use("/api/messages", messageRoutes);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/messages', messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "../../Frontend/dist");
-  app.use(express.static(frontendPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get(/(.*)/, (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
 }
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on PORT: ${PORT}`);
+// Start server
+server.listen(3000, () => {
+  console.log('Server is running on port 3000');
   connectDB();
 });

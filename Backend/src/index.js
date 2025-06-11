@@ -25,11 +25,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../Frontend/dist")));
-
+  console.log('Setting up production static files...');
+  app.use(express.static(path.join(__dirname, "Frontend/dist")));
+  
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Frontend", "dist", "index.html"));
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, "Frontend", "dist", "index.html"));
+    }
   });
+  console.log('Production setup complete');
 }
 
 // Start server

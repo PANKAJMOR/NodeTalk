@@ -1,4 +1,5 @@
-import express from 'express';
+import authRoutes from './routes/auth.route.js';
+import messageRoutes from './routes/message.route.js';
 import { connectDB } from './lib/db.js';
 import { app, server } from './lib/socket.js';
 import cookieParser from 'cookie-parser';
@@ -6,83 +7,39 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import path from "path";
 import { fileURLToPath } from 'url';
+import express from 'express';
 
 // Fix for ES modules __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('Step 1: Starting application setup...');
-try {
-  // Middleware
-  console.log('Step 2: Setting up middleware...');
-  app.use(bodyParser.json({ limit: '50mb' }));
-  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-  app.use(cookieParser());
-  app.use(
-    cors({
-      origin: "http://localhost:5173",
-      credentials: true,
-    })
-  );
-  console.log('Step 3: Middleware setup complete');
+// Middleware
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/messages', messageRoutes);
+
+if (process.env.NODE_ENV === "production") {
+  // Go up from Backend/src to project root, then into Frontend/dist
+  app.use(express.static(path.join(__dirname, "../../Frontend/dist")));
   
-  // Test basic route first
-  console.log('Step 4: Setting up test route...');
-  app.get('/test', (req, res) => {
-    res.json({ message: 'Server is working' });
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../Frontend", "dist", "index.html"));
   });
-  console.log('Step 5: Test route setup complete');
-  
-  // Try importing routes one by one
-  console.log('Step 6: Importing auth routes...');
-  const authModule = await import('./routes/auth.route.js');
-  console.log('Step 7: Auth routes imported successfully');
-  
-  console.log('Step 8: Importing message routes...');
-  const messageModule = await import('./routes/message.route.js');
-  console.log('Step 9: Message routes imported successfully');
-  
-  // Now try registering them
-  console.log('Step 10: Registering auth routes...');
-  app.use('/api/auth', authModule.default);
-  console.log('Step 11: Auth routes registered successfully');
-  
-  console.log('Step 12: Registering message routes...');
-  app.use('/api/messages', messageModule.default);
-  console.log('Step 13: Message routes registered successfully');
-  
- if (process.env.NODE_ENV === "production") {
-  console.log('Step 14: Setting up production static files...');
-  console.log('Current __dirname:', __dirname);
-  
-  const staticPath = path.join(__dirname, "Frontend/dist");
-  const indexPath = path.join(__dirname, "Frontend", "dist", "index.html");
-  
-  console.log('Static path:', staticPath);
-  console.log('Index path:', indexPath);
-  
-  app.use(express.static(staticPath));
-  console.log('Step 15: Static files setup complete');
-  
-  console.log('Step 16: Setting up catch-all route...');
-  app.get('*', (req, res) => {
-    console.log('Serving file:', indexPath);
-    res.sendFile(indexPath);
-  });
-  console.log('Step 17: Catch-all route setup complete');
 }
-  
-  console.log('Step 20: Starting server...');
-  // Start server
-  const PORT = process.env.PORT || 3000;
-  server.listen(PORT, () => {
-    console.log(`Step 21: Server is running on port ${PORT}`);
-    connectDB();
-  });
-  
-} catch (error) {
-  console.error('Error occurred at step:', error);
-  console.error('Error details:', error.message);
-  console.error('Stack trace:', error.stack);
-  process.exit(1);
-}
+
+// Start server
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  connectDB();
+});

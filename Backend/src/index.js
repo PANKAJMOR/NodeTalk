@@ -51,24 +51,26 @@ try {
   app.use('/api/messages', messageModule.default);
   console.log('Step 13: Message routes registered successfully');
   
-  if (process.env.NODE_ENV === "production") {
-    console.log('Step 14: Setting up production static files...');
-    
-    // More robust path resolution
-    const frontendDistPath = path.resolve(__dirname, "../Frontend/dist");
-    console.log('Step 15: Frontend dist path:', frontendDistPath);
-    
-    app.use(express.static(frontendDistPath));
-    console.log('Step 16: Static files setup complete');
-    
-    console.log('Step 17: Setting up catch-all route...');
-    app.get('*', (req, res) => {
-      const indexPath = path.join(frontendDistPath, "index.html");
-      console.log('Step 18: Serving index.html from:', indexPath);
-      res.sendFile(indexPath);
-    });
-    console.log('Step 19: Catch-all route setup complete');
-  }
+ if (process.env.NODE_ENV === "production") {
+  console.log('Step 14: Setting up production static files...');
+  console.log('Current __dirname:', __dirname);
+  
+  const staticPath = path.join(__dirname, "Frontend/dist");
+  const indexPath = path.join(__dirname, "Frontend", "dist", "index.html");
+  
+  console.log('Static path:', staticPath);
+  console.log('Index path:', indexPath);
+  
+  app.use(express.static(staticPath));
+  console.log('Step 15: Static files setup complete');
+  
+  console.log('Step 16: Setting up catch-all route...');
+  app.get('*', (req, res) => {
+    console.log('Serving file:', indexPath);
+    res.sendFile(indexPath);
+  });
+  console.log('Step 17: Catch-all route setup complete');
+}
   
   console.log('Step 20: Starting server...');
   // Start server

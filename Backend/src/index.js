@@ -25,10 +25,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../Frontend/dist")));
+  // Fixed: Frontend with capital F
+  app.use(express.static(path.join(__dirname, "Frontend/dist")));
 
+  // Fixed: More specific catch-all that doesn't interfere with API routes
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Frontend", "dist", "index.html"));
+    // Only serve index.html for non-API routes
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, "Frontend", "dist", "index.html"));
+    }
   });
 }
 

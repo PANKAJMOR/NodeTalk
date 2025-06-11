@@ -5,11 +5,13 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import path from "path";
+import { fileURLToPath } from 'url';
 
-const __dirname = path.resolve();
+// Fix for ES modules __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('Step 1: Starting application setup...');
-
 try {
   // Middleware
   console.log('Step 2: Setting up middleware...');
@@ -23,18 +25,16 @@ try {
     })
   );
   console.log('Step 3: Middleware setup complete');
-
+  
   // Test basic route first
   console.log('Step 4: Setting up test route...');
   app.get('/test', (req, res) => {
     res.json({ message: 'Server is working' });
   });
   console.log('Step 5: Test route setup complete');
-
+  
   // Try importing routes one by one
   console.log('Step 6: Importing auth routes...');
-  
-  // First, let's try to import without using them
   const authModule = await import('./routes/auth.route.js');
   console.log('Step 7: Auth routes imported successfully');
   
@@ -50,26 +50,34 @@ try {
   console.log('Step 12: Registering message routes...');
   app.use('/api/messages', messageModule.default);
   console.log('Step 13: Message routes registered successfully');
-
+  
   if (process.env.NODE_ENV === "production") {
     console.log('Step 14: Setting up production static files...');
-    app.use(express.static(path.join(__dirname, "Frontend/dist")));
-    console.log('Step 15: Static files setup complete');
     
-    console.log('Step 16: Setting up catch-all route...');
+    // More robust path resolution
+    const frontendDistPath = path.resolve(__dirname, "../Frontend/dist");
+    console.log('Step 15: Frontend dist path:', frontendDistPath);
+    
+    app.use(express.static(frontendDistPath));
+    console.log('Step 16: Static files setup complete');
+    
+    console.log('Step 17: Setting up catch-all route...');
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, "Frontend", "dist", "index.html"));
+      const indexPath = path.join(frontendDistPath, "index.html");
+      console.log('Step 18: Serving index.html from:', indexPath);
+      res.sendFile(indexPath);
     });
-    console.log('Step 17: Catch-all route setup complete');
+    console.log('Step 19: Catch-all route setup complete');
   }
-
-  console.log('Step 18: Starting server...');
+  
+  console.log('Step 20: Starting server...');
   // Start server
-  server.listen(3000, () => {
-    console.log('Step 19: Server is running on port 3000');
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`Step 21: Server is running on port ${PORT}`);
     connectDB();
   });
-
+  
 } catch (error) {
   console.error('Error occurred at step:', error);
   console.error('Error details:', error.message);
